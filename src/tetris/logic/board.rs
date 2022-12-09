@@ -24,7 +24,7 @@ impl Board {
         self.data[y as usize][x as usize]
     }
 
-    pub fn set_block_debug(&mut self, y: i32, x: i32, block: BlockType) {
+    pub fn set_block(&mut self, y: i32, x: i32, block: BlockType) {
         self.data[y as usize][x as usize] = block;
     }
 }

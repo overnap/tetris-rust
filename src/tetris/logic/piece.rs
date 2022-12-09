@@ -114,6 +114,14 @@ impl Piece {
     }
 
     pub fn place(&mut self, board: &mut Board) {
+        for y in 0..4 {
+            for x in 0..4 {
+                let block = self.get_block(y, x);
+                if block != BlockType::Empty {
+                    board.set_block(self.y + y, self.x + x, block);
+                }
+            }
+        }
     }
 
     pub fn shift(&mut self, board: &Board, y: i32, x: i32) -> bool {

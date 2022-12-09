@@ -19,7 +19,7 @@ impl Tetris {
     }
 
     pub fn init(&mut self) {
-        self.logic.board.set_block_debug(0, 0, BlockType::Green);
+        self.logic.board.set_block(0, 0, BlockType::Green);
     }
 
     pub fn update(&mut self, rl: &mut RaylibHandle) {
