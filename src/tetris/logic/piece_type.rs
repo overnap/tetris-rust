@@ -6,5 +6,5 @@ pub enum PieceType {
     J,
     I,
     O,
-    T,
+    T
 }

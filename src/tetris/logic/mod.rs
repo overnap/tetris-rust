@@ -1,18 +1,23 @@
+mod bag;
 mod board;
 mod block_type;
 mod piece;
 mod piece_type;
 mod input;
 mod input_type;
+mod tspin_type;
 
+use bag::*;
 use board::*;
 use piece::*;
+use tspin_type::*;
 pub use block_type::*;
 pub use piece_type::*;
 pub use input::*;
 pub use input_type::*;
 
 pub struct Logic {
+    pub bag: Bag,
     pub board: Board,
     pub current_piece: Option<Piece>,
     pub input: Input,
@@ -29,12 +34,13 @@ pub struct Logic {
 impl Logic {
     pub fn new() -> Self {
         Self{
+            bag: Bag::new(None),
             board: Board::new(),
             current_piece: Some(Piece::new(PieceType::L)),
             input: Input::new(),
             das: 15.0 / 60.0,
             arr: 2.0 / 60.0,
-            sdf: 3.0 / 60.0,
+            sdf: 2.0 / 60.0,
             move_direction: 0,
             move_last: 0.0,
             drop_last: 0.0
@@ -42,6 +48,11 @@ impl Logic {
     }
 
     pub fn update(&mut self, dt: f32) {
+        // Get the piece from the bag
+        if let None = &self.current_piece {
+            self.current_piece = Some(Piece::new(self.bag.pop()));
+        }
+
         if let Some(piece) = &mut self.current_piece {
             // Move horizontally
             let direction_pressed = (self.input.is_pressed(InputType::MoveRight) as i32)
@@ -70,6 +81,19 @@ impl Logic {
                 }
             }
 
+            // Rotate
+            if self.input.is_pressed(InputType::RotateCW) {
+                piece.rotate(&self.board, true);
+            }
+
+            if self.input.is_pressed(InputType::RotateCCW) {
+                piece.rotate(&self.board, false);
+            }
+
+            if self.input.is_pressed(InputType::Flip) {
+                piece.flip(&self.board);
+            }
+
             // Soft drop
             if self.input.is_pressed(InputType::SoftDrop) {
                 self.drop_last = 0.0;
@@ -89,6 +113,7 @@ impl Logic {
             if self.input.is_pressed(InputType::HardDrop) {
                 while piece.shift(&self.board, -1, 0) {};
                 piece.place(&mut self.board);
+                self.current_piece = None;
             }
         }
     }

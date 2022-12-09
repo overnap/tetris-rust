@@ -8,8 +8,8 @@ pub enum BlockType {
     Orange,
     Yellow,
     Green,
-    Blue,
     Cyan,
+    Blue,
     Purple
 }
 

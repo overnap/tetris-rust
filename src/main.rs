@@ -9,7 +9,7 @@ fn main() {
         .build();
 
     let mut tetris = Tetris::new();
-    tetris.init();
+    tetris.init(&mut rl, & thread);
 
     while !rl.window_should_close() {
         tetris.update(&mut rl);

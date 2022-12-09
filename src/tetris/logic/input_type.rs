@@ -6,5 +6,7 @@ pub enum InputType {
     HardDrop,
     RotateCW,
     RotateCCW,
+    Flip,
+    Hold,
     SIZE
 }

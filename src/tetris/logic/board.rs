@@ -25,6 +25,8 @@ impl Board {
     }
 
     pub fn set_block(&mut self, y: i32, x: i32, block: BlockType) {
-        self.data[y as usize][x as usize] = block;
+        if y >= 0 && y < HEIGHT as i32 && x >= 0 && x < WIDTH as i32 {
+            self.data[y as usize][x as usize] = block;
+        }
     }
 }
