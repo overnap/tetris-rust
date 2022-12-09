@@ -1,6 +1,6 @@
 use super:: *;
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Piece {
     piece_type: PieceType,
     size: (usize, usize),
@@ -72,7 +72,7 @@ impl Piece {
             PieceType::L => (3, 3),
             PieceType::J => (3, 3),
             PieceType::I => (4, 4),
-            PieceType::O => (4, 3),
+            PieceType::O => (3, 4),
             PieceType::T => (3, 3),
             // _ => (0, 0),
         };
@@ -107,14 +107,22 @@ impl Piece {
             size,
             kicks,
             x: 3,
-            y: 21 - size.1 as i32,
+            y: 21 - size.0 as i32,
             rotate_state: 0,
             tspin_state: TspinType::None
         }
     }
 
-    pub fn get_block(&self, y: i32, x: i32) -> BlockType {
+    pub fn get_block(& self, y: i32, x: i32) -> BlockType {
         self.blocks[y as usize][x as usize]
+    }
+
+    pub fn get_type(& self) -> PieceType {
+        self.piece_type
+    }
+
+    pub fn get_size(& self) -> (usize, usize) {
+        self.size
     }
 
     pub fn place(&mut self, board: &mut Board) {
@@ -216,7 +224,7 @@ impl Piece {
 
     fn tspin_update(&mut self, board: &Board) {
         self.tspin_state = TspinType::None;
-        
+
         if self.piece_type == PieceType::T {
             let corners = [
                 (board.get_block(self.y+2, self.x) != BlockType::Empty) as i32,

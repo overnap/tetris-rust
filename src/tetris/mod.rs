@@ -55,25 +55,24 @@ impl Tetris {
 
     pub fn draw(& self, d: &mut RaylibDrawHandle) {
         d.clear_background(Color::BLACK);
+
+        // Draw backgrounds
         d.draw_rectangle_lines_ex(rrect(BOARD_BIAS_X-8, BOARD_BIAS_Y-8, BLOCK_PIXELS*10+16, BLOCK_PIXELS*20+16),
                                 8, Color::GRAY);
+        d.draw_rectangle_lines_ex(rrect(BOARD_BIAS_X-BLOCK_PIXELS*6-8, BOARD_BIAS_Y-8, BLOCK_PIXELS*5+16, BLOCK_PIXELS*4+16),
+                                    8, Color::GRAY);
 
         // Draw blocks in the board
         for y in 0..DISPLAY_HEIGHT {
             for x in 0..DISPLAY_WIDTH {
                 let block = self.logic.board.get_block(y, x);
-                self.draw_block(d, y, x, block, 255);
+                self.draw_block(d, BOARD_BIAS_Y+(19-y)*BLOCK_PIXELS, BOARD_BIAS_X+x*BLOCK_PIXELS, block, 255);
             }
         }
 
         // Draw the piece (current block)
         if let Some(piece) = &self.logic.current_piece {
-            for y in 0..4 {
-                for x in 0..4 {
-                    let block = piece.get_block(y, x);
-                    self.draw_block(d, piece.y + y, piece.x + x, block, 255);
-                }
-            }
+            self.draw_piece(d, piece, 255);
         }
 
         // Draw the ghost of the piece
@@ -81,10 +80,32 @@ impl Tetris {
             let mut ghost = piece.clone();
 
             while ghost.shift(&self.logic.board, -1, 0) {};
+            self.draw_piece(d, &ghost, 96);
+        }
+
+        // Draw the held piece
+        if let Some(held) = self.logic.held_piece {
+            let piece = Piece::new(held);
+            let bias = (
+                match held {
+                    PieceType::O => BLOCK_PIXELS,
+                    PieceType::I => -BLOCK_PIXELS/2,
+                    _ => 0
+                },
+                match held {
+                    PieceType::O | PieceType::I => -BLOCK_PIXELS/2,
+                    _ => 0
+                }
+            );
+
             for y in 0..4 {
                 for x in 0..4 {
-                    let block = ghost.get_block(y, x);
-                    self.draw_block(d, ghost.y + y, ghost.x + x, block, 96);
+                    let block = piece.get_block(y, x);
+
+                    if block != BlockType::Empty {
+                        self.draw_block(d, BOARD_BIAS_Y + y*BLOCK_PIXELS + bias.0,
+                                        BOARD_BIAS_X + (x-5)*BLOCK_PIXELS + bias.1, block, 255);
+                    }
                 }
             }
         }
@@ -98,16 +119,26 @@ impl Tetris {
                 let index = block as i32 - 1;
 
                 d.draw_texture_pro(texture, rrect(16*index, 0, 16, 16),
-                                rrect(x*BLOCK_PIXELS + BOARD_BIAS_X, (19-y)*BLOCK_PIXELS + BOARD_BIAS_Y, BLOCK_PIXELS, BLOCK_PIXELS),
+                                rrect(x, y, BLOCK_PIXELS, BLOCK_PIXELS),
                                 rvec2(0, 0),
                                 0.0,
                                 color);
             } else {
                 let mut color = block.get_color();
                 color.a = alpha;
-                
-                d.draw_rectangle(x*BLOCK_PIXELS + BOARD_BIAS_X, (19-y)*BLOCK_PIXELS + BOARD_BIAS_Y,
-                            BLOCK_PIXELS, BLOCK_PIXELS, color);
+
+                d.draw_rectangle(x, y, BLOCK_PIXELS, BLOCK_PIXELS, color);
+            }
+        }
+    }
+
+    fn draw_piece(& self, d: &mut RaylibDrawHandle, piece: & Piece, alpha: u8) {
+        let size = piece.get_size();
+
+        for y in 0..size.0 as i32 {
+            for x in 0..size.1 as i32 {
+                let block = piece.get_block(y, x);
+                self.draw_block(d, (19-(piece.y+y))*BLOCK_PIXELS+BOARD_BIAS_Y, (piece.x+x)*BLOCK_PIXELS+BOARD_BIAS_X, block, alpha);
             }
         }
     }
