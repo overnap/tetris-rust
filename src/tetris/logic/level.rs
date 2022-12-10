@@ -6,6 +6,6 @@ pub struct Level {
 
 impl Default for Level {
     fn default() -> Self {
-        Self { gravity: 0.0, lock_delay: 500.0, lines: 0 }
+        Self { gravity: 1.0 / 60.0, lock_delay: 500.0 / 1000.0, lines: 0 }
     }
 }

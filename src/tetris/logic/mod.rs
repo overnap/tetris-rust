@@ -27,10 +27,14 @@ pub struct Logic {
     pub current_piece: Option<Piece>,
     pub held_piece: Option<PieceType>,
     pub input: Input,
+    
+    level_index: usize,
 
     move_direction: i32,
     move_last: f32,
-    drop_last: f32
+    drop_last: f32,
+    land_last: f32,
+    gravity_acc: f32
 }
 
 impl Logic {
@@ -42,9 +46,12 @@ impl Logic {
             current_piece: None,
             held_piece: None,
             input: Input::new(),
+            level_index: 0,
             move_direction: 0,
             move_last: 0.0,
-            drop_last: 0.0
+            drop_last: 0.0,
+            land_last: 0.0,
+            gravity_acc: 0.0
         }
     }
 
@@ -59,6 +66,7 @@ impl Logic {
             if let Some(piece) = &mut self.current_piece {
                 let previous_held = self.held_piece;
                 self.held_piece = Some(piece.get_type());
+                self.land_last = 0.0;
                 
                 if let Some(held) = previous_held {
                     self.current_piece = Some(Piece::new(held, self.config.board_height, self.config.board_width));
@@ -78,7 +86,9 @@ impl Logic {
             if direction_pressed != 0 {
                 self.move_direction = direction_pressed;
                 self.move_last = 0.0;
-                piece.shift(&self.board, 0, direction_pressed);
+                if piece.shift(&self.board, 0, direction_pressed) {
+                    self.land_last = 0.0;
+                }
             }
             
             if self.move_direction != 0 && (direction_released == self.move_direction ||
@@ -92,27 +102,39 @@ impl Logic {
 
                 while self.move_last >= self.config.das + self.config.arr {
                     self.move_last -= self.config.arr;
-                    piece.shift(&self.board, 0, self.move_direction);
+
+                    if piece.shift(&self.board, 0, self.move_direction) {
+                        self.land_last = 0.0;
+                    }
                 }
             }
 
             // Rotate
             if self.input.is_pressed(InputType::RotateCW) {
-                piece.rotate(&self.board, true);
+                if piece.rotate(&self.board, true) {
+                    self.land_last = 0.0;
+                }
             }
 
             if self.input.is_pressed(InputType::RotateCCW) {
-                piece.rotate(&self.board, false);
+                if piece.rotate(&self.board, false) {
+                    self.land_last = 0.0;
+                }
             }
 
             if self.input.is_pressed(InputType::Flip) {
-                piece.flip(&self.board);
+                if piece.flip(&self.board) {
+                    self.land_last = 0.0;
+                }
             }
 
             // Soft drop
             if self.input.is_pressed(InputType::SoftDrop) {
                 self.drop_last = 0.0;
-                piece.shift(&self.board, -1, 0);
+                
+                if piece.shift(&self.board, -1, 0) {
+                    self.land_last = 0.0;
+                }
             }
 
             if self.input.is_held(InputType::SoftDrop) {
@@ -120,7 +142,10 @@ impl Logic {
 
                 while self.drop_last >= self.config.sdf {
                     self.drop_last -= self.config.sdf;
-                    piece.shift(&self.board, -1, 0);
+
+                    if piece.shift(&self.board, -1, 0) {
+                        self.land_last = 0.0;
+                    }
                 }
             }
 
@@ -128,8 +153,44 @@ impl Logic {
             if self.input.is_pressed(InputType::HardDrop) {
                 while piece.shift(&self.board, -1, 0) {};
                 piece.place(&mut self.board);
+
                 self.board.trim();
                 self.current_piece = None;
+                self.move_direction = 0;
+                self.land_last = 0.0;
+                self.move_last = 0.0;
+
+                return;
+            }
+
+            // Lock
+            if !piece.shift(&self.board, -1, 0) {
+                self.land_last += dt;
+        
+                if self.land_last >= self.config.levels[self.level_index].lock_delay {
+                    piece.place(&mut self.board);
+
+                    self.board.trim();
+                    self.current_piece = None;
+                    self.move_direction = 0;
+                    self.land_last = 0.0;
+                    self.move_last = 0.0;
+
+                    return;
+                }
+            } else {
+                piece.shift(&self.board, 1, 0);
+            }
+
+            // Gravity
+            self.gravity_acc += dt * self.config.levels[self.level_index].gravity * 60.0;
+
+            while self.gravity_acc >= 1.0 {
+                self.gravity_acc -= 1.0;
+                
+                if piece.shift(&self.board, -1, 0) {
+                    self.land_last = 0.0;
+                }
             }
         }
     }

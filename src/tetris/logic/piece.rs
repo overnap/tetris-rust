@@ -209,7 +209,7 @@ impl Piece {
         }
     }
 
-    fn test(& self, board: & Board) -> bool {
+    pub fn test(& self, board: & Board) -> bool {
         for y in 0..4 {
             for x in 0..4 {
                 if self.get_block(y, x) != BlockType::Empty &&
