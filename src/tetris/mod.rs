@@ -73,15 +73,19 @@ impl Tetris {
         // Draw backgrounds
         d.draw_rectangle(board_bias_x, board_bias_y, BLOCK_PIXELS*board_width, BLOCK_PIXELS*board_height, Color::new(0, 0, 0, 210));
         d.draw_rectangle_lines_ex(rrect(board_bias_x-8, board_bias_y-8, BLOCK_PIXELS*board_width+16, BLOCK_PIXELS*board_height+16),
-                                8, Color::GRAY);
+                                8, Color::WHITE);
         
         d.draw_rectangle(board_bias_x-BLOCK_PIXELS*6, board_bias_y, BLOCK_PIXELS*5, BLOCK_PIXELS*4, Color::new(0, 0, 0, 210));
         d.draw_rectangle_lines_ex(rrect(board_bias_x-BLOCK_PIXELS*6-8, board_bias_y-8, BLOCK_PIXELS*5+16, BLOCK_PIXELS*4+16),
-                                    8, Color::GRAY);
+                                    8, Color::WHITE);
 
         d.draw_rectangle(board_bias_x+BLOCK_PIXELS*11, board_bias_y, BLOCK_PIXELS*5, BLOCK_PIXELS*10, Color::new(0, 0, 0, 210));
         d.draw_rectangle_lines_ex(rrect(board_bias_x+BLOCK_PIXELS*11-8, board_bias_y-8, BLOCK_PIXELS*5+16, BLOCK_PIXELS*10+16),
-                                    8, Color::GRAY);
+                                    8, Color::WHITE);
+
+        // Draw remaining lock delay
+        d.draw_rectangle(board_bias_x-8, board_bias_y+BLOCK_PIXELS*board_height+18,
+                        ((BLOCK_PIXELS*board_width+16) as f32 * (1.0 - self.logic.land_rate())) as i32, 12, Color::WHITE);
 
         // Draw blocks in the board
         for y in 0..board_bias_y {
@@ -106,7 +110,7 @@ impl Tetris {
 
         // Draw the held piece
         if let Some(held) = self.logic.held_piece {
-            self.draw_piece_plain(d, held, board_bias_y, board_bias_x-5*BLOCK_PIXELS, 255);
+            self.draw_piece_plain(d, held, board_bias_y, board_bias_x-5*BLOCK_PIXELS, if self.logic.is_hold_locked() {0} else {255});
         }
 
         // Draw next pieces
@@ -122,8 +126,14 @@ impl Tetris {
     fn draw_block(& self, d: &mut RaylibDrawHandle, y: i32, x: i32, block: BlockType, alpha: u8) {
         if block != BlockType::Empty && block != BlockType::Outside {
             if let Some(texture) = &self.sprite {
-                let color = Color::new(255, 255, 255, alpha);
-                let index = block as i32 - 1;
+                let color = match alpha {
+                    0 => Color::new(128, 128, 128, 255),
+                    _ => Color::new(255, 255, 255, alpha)
+                };
+                let index = match alpha {
+                    0 => 0,
+                    _ => block as i32 - 1
+                };
 
                 d.draw_texture_pro(texture, rrect(16*index, 0, 16, 16),
                                 rrect(x, y, BLOCK_PIXELS, BLOCK_PIXELS),
@@ -131,8 +141,13 @@ impl Tetris {
                                 0.0,
                                 color);
             } else {
-                let mut color = block.get_color();
-                color.a = alpha;
+                let mut color;
+                if alpha != 0 {
+                    color = block.get_color();
+                    color.a = alpha;
+                } else {
+                    color = Color::DARKGRAY;
+                }
 
                 d.draw_rectangle(x, y, BLOCK_PIXELS, BLOCK_PIXELS, color);
             }

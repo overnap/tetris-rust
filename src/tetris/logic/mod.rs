@@ -30,6 +30,7 @@ pub struct Logic {
     
     level_index: usize,
 
+    hold_lock: bool,
     move_direction: i32,
     move_last: f32,
     drop_last: f32,
@@ -47,6 +48,7 @@ impl Logic {
             held_piece: None,
             input: Input::new(),
             level_index: 0,
+            hold_lock: false,
             move_direction: 0,
             move_last: 0.0,
             drop_last: 0.0,
@@ -62,11 +64,15 @@ impl Logic {
         }
 
         // Hold
-        if self.input.is_pressed(InputType::Hold) {
+        if self.input.is_pressed(InputType::Hold) && !self.hold_lock {
             if let Some(piece) = &mut self.current_piece {
                 let previous_held = self.held_piece;
                 self.held_piece = Some(piece.get_type());
+                self.hold_lock = true;
+
                 self.land_last = 0.0;
+                self.move_last = 0.0;
+                self.gravity_acc = 0.0;
                 
                 if let Some(held) = previous_held {
                     self.current_piece = Some(Piece::new(held, self.config.board_height, self.config.board_width));
@@ -86,8 +92,10 @@ impl Logic {
             if direction_pressed != 0 {
                 self.move_direction = direction_pressed;
                 self.move_last = 0.0;
+
                 if piece.shift(&self.board, 0, direction_pressed) {
                     self.land_last = 0.0;
+                    self.gravity_acc = 0.0;
                 }
             }
             
@@ -105,6 +113,7 @@ impl Logic {
 
                     if piece.shift(&self.board, 0, self.move_direction) {
                         self.land_last = 0.0;
+                        self.gravity_acc = 0.0;
                     }
                 }
             }
@@ -113,18 +122,21 @@ impl Logic {
             if self.input.is_pressed(InputType::RotateCW) {
                 if piece.rotate(&self.board, true) {
                     self.land_last = 0.0;
+                    self.gravity_acc = 0.0;
                 }
             }
 
             if self.input.is_pressed(InputType::RotateCCW) {
                 if piece.rotate(&self.board, false) {
                     self.land_last = 0.0;
+                    self.gravity_acc = 0.0;
                 }
             }
 
             if self.input.is_pressed(InputType::Flip) {
                 if piece.flip(&self.board) {
                     self.land_last = 0.0;
+                    self.gravity_acc = 0.0;
                 }
             }
 
@@ -134,11 +146,13 @@ impl Logic {
                 
                 if piece.shift(&self.board, -1, 0) {
                     self.land_last = 0.0;
+                    self.gravity_acc = 0.0;
                 }
             }
 
             if self.input.is_held(InputType::SoftDrop) {
                 self.drop_last += dt;
+                self.gravity_acc = 0.0;
 
                 while self.drop_last >= self.config.sdf {
                     self.drop_last -= self.config.sdf;
@@ -156,9 +170,10 @@ impl Logic {
 
                 self.board.trim();
                 self.current_piece = None;
-                self.move_direction = 0;
+                self.hold_lock = false;
                 self.land_last = 0.0;
                 self.move_last = 0.0;
+                self.gravity_acc = 0.0;
 
                 return;
             }
@@ -172,9 +187,10 @@ impl Logic {
 
                     self.board.trim();
                     self.current_piece = None;
-                    self.move_direction = 0;
+                    self.hold_lock = false;
                     self.land_last = 0.0;
                     self.move_last = 0.0;
+                    self.gravity_acc = 0.0;
 
                     return;
                 }
@@ -193,5 +209,13 @@ impl Logic {
                 }
             }
         }
+    }
+
+    pub fn land_rate(& self) -> f32 {
+        self.land_last / self.config.levels[self.level_index].lock_delay
+    }
+
+    pub fn is_hold_locked(& self) -> bool {
+        self.hold_lock  
     }
 }
