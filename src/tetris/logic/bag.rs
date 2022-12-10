@@ -47,6 +47,14 @@ impl Bag {
         }
     }
 
+    pub fn get_uncertain(& self, index: usize) -> Option<PieceType> {
+        if index < self.pieces.len() {
+            Some(self.pieces[index])
+        } else {
+            None
+        }
+    }
+
     pub fn pop(&mut self) -> PieceType {
         let piece = self.get(0);
         self.pieces.pop_front();

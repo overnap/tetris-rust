@@ -4,22 +4,24 @@ use raylib::prelude::*;
 use logic::*;
 
 const BLOCK_PIXELS: i32 = 28; // Pixels for the length of one side of blocks
-const DISPLAY_HEIGHT: i32 = 20;
+const DISPLAY_HEIGHT: i32 = 22;
 const DISPLAY_WIDTH: i32 = 10;
 const BOARD_BIAS_Y: i32 = (810 - DISPLAY_HEIGHT * BLOCK_PIXELS) / 2;
 const BOARD_BIAS_X: i32 = (1440 - DISPLAY_WIDTH * BLOCK_PIXELS) / 2;
 
 pub struct Tetris {
     logic: Logic,
+    background: Option<Texture2D>,
     sprite: Option<Texture2D>
 }
 
 impl Tetris {
     pub fn new() -> Self {
-        Self{ logic: Logic::new(), sprite: None }
+        Self{ logic: Logic::new(), background: None, sprite: None }
     }
 
     pub fn init(&mut self, rl: &mut RaylibHandle, thread: & RaylibThread) {
+        self.background = rl.load_texture(&thread, "static/background.png").ok();
         self.sprite = rl.load_texture(&thread, "static/blocks.png").ok();
     }
 
@@ -55,11 +57,21 @@ impl Tetris {
 
     pub fn draw(& self, d: &mut RaylibDrawHandle) {
         d.clear_background(Color::BLACK);
+        if let Some(img) = &self.background {
+            d.draw_texture(img, 0, 0, Color::WHITE);
+        }
 
         // Draw backgrounds
+        d.draw_rectangle(BOARD_BIAS_X, BOARD_BIAS_Y, BLOCK_PIXELS*10, BLOCK_PIXELS*20, Color::new(0, 0, 0, 210));
         d.draw_rectangle_lines_ex(rrect(BOARD_BIAS_X-8, BOARD_BIAS_Y-8, BLOCK_PIXELS*10+16, BLOCK_PIXELS*20+16),
                                 8, Color::GRAY);
+        
+        d.draw_rectangle(BOARD_BIAS_X-BLOCK_PIXELS*6, BOARD_BIAS_Y, BLOCK_PIXELS*5, BLOCK_PIXELS*4, Color::new(0, 0, 0, 210));
         d.draw_rectangle_lines_ex(rrect(BOARD_BIAS_X-BLOCK_PIXELS*6-8, BOARD_BIAS_Y-8, BLOCK_PIXELS*5+16, BLOCK_PIXELS*4+16),
+                                    8, Color::GRAY);
+
+        d.draw_rectangle(BOARD_BIAS_X+BLOCK_PIXELS*11, BOARD_BIAS_Y, BLOCK_PIXELS*5, BLOCK_PIXELS*10, Color::new(0, 0, 0, 210));
+        d.draw_rectangle_lines_ex(rrect(BOARD_BIAS_X+BLOCK_PIXELS*11-8, BOARD_BIAS_Y-8, BLOCK_PIXELS*5+16, BLOCK_PIXELS*10+16),
                                     8, Color::GRAY);
 
         // Draw blocks in the board
@@ -85,31 +97,17 @@ impl Tetris {
 
         // Draw the held piece
         if let Some(held) = self.logic.held_piece {
-            let piece = Piece::new(held);
-            let bias = (
-                match held {
-                    PieceType::O => BLOCK_PIXELS,
-                    PieceType::I => -BLOCK_PIXELS/2,
-                    _ => 0
-                },
-                match held {
-                    PieceType::O | PieceType::I => -BLOCK_PIXELS/2,
-                    _ => 0
-                }
-            );
-
-            for y in 0..4 {
-                for x in 0..4 {
-                    let block = piece.get_block(y, x);
-
-                    if block != BlockType::Empty {
-                        self.draw_block(d, BOARD_BIAS_Y + y*BLOCK_PIXELS + bias.0,
-                                        BOARD_BIAS_X + (x-5)*BLOCK_PIXELS + bias.1, block, 255);
-                    }
-                }
-            }
+            self.draw_piece_plain(d, held, BOARD_BIAS_Y, BOARD_BIAS_X-5*BLOCK_PIXELS, 255);
         }
 
+        // Draw next pieces
+        for next in 0..3 {
+            let seen = self.logic.bag.get_uncertain(next);
+
+            if let Some(piece_type) = seen {
+                self.draw_piece_plain(d, piece_type, BOARD_BIAS_Y+next as i32*BLOCK_PIXELS*3, BOARD_BIAS_X+BLOCK_PIXELS*12, 255);
+            }
+        }
     }
 
     fn draw_block(& self, d: &mut RaylibDrawHandle, y: i32, x: i32, block: BlockType, alpha: u8) {
@@ -139,6 +137,32 @@ impl Tetris {
             for x in 0..size.1 as i32 {
                 let block = piece.get_block(y, x);
                 self.draw_block(d, (19-(piece.y+y))*BLOCK_PIXELS+BOARD_BIAS_Y, (piece.x+x)*BLOCK_PIXELS+BOARD_BIAS_X, block, alpha);
+            }
+        }
+    }
+
+    fn draw_piece_plain(& self, d: &mut RaylibDrawHandle, piece_type: PieceType, y: i32, x: i32, alpha: u8) {
+        let piece = Piece::new(piece_type);
+        let bias = (
+            match piece_type {
+                PieceType::O => -BLOCK_PIXELS,
+                PieceType::I => BLOCK_PIXELS/2,
+                _ => 0
+            },
+            match piece_type {
+                PieceType::O | PieceType::I => -BLOCK_PIXELS/2,
+                _ => 0
+            }
+        );
+
+        for i in 0..4 {
+            for j in 0..4 {
+                let block = piece.get_block(i, j);
+
+                if block != BlockType::Empty {
+                    self.draw_block(d, y + (3-i)*BLOCK_PIXELS + bias.0,
+                                    x + j*BLOCK_PIXELS + bias.1, block, alpha);
+                }
             }
         }
     }

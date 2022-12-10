@@ -37,7 +37,7 @@ impl Logic {
         Self{
             bag: Bag::new(None),
             board: Board::new(),
-            current_piece: Some(Piece::new(PieceType::L)),
+            current_piece: None,
             held_piece: None,
             input: Input::new(),
             das: 15.0 / 60.0,

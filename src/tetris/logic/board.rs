@@ -1,6 +1,6 @@
 use super::*;
 
-const HEIGHT: usize = 40;
+const HEIGHT: usize = 28;
 const WIDTH: usize = 10;
 
 pub struct Board {
