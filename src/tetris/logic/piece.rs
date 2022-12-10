@@ -14,7 +14,7 @@ pub struct Piece {
 }
 
 impl Piece {
-    pub fn new(piece_type: PieceType) -> Self {
+    pub fn new(piece_type: PieceType, board_height: usize, board_width: usize) -> Self {
         let blocks = match piece_type {
             PieceType::Z => [
                 [BlockType::Empty, BlockType::Empty, BlockType::Empty, BlockType::Empty],
@@ -106,8 +106,8 @@ impl Piece {
             blocks,
             size,
             kicks,
-            x: 3,
-            y: 21 - size.0 as i32,
+            x: board_width as i32 / 2 - 2,
+            y: board_height as i32 + 1 - size.0 as i32,
             rotate_state: 0,
             tspin_state: TspinType::None
         }

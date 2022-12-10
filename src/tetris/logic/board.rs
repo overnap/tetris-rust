@@ -1,23 +1,22 @@
 use super::*;
 
-const HEIGHT: usize = 28;
-const WIDTH: usize = 10;
-
 pub struct Board {
-    data: [[BlockType; WIDTH]; HEIGHT]
+    data: Vec<Vec<BlockType>>,
+    height: usize,
+    width: usize
 }
 
 impl Board {
-    pub fn new() -> Self {
-        Self{ data: [[BlockType::Empty; WIDTH]; HEIGHT] }
+    pub fn new(height: usize, width: usize) -> Self {
+        Self{ data: vec![vec![BlockType::Empty; width]; height+4], height: height+4, width }
     }
 
     pub fn get_block(& self, y: i32, x: i32) -> BlockType {
-        if y >= HEIGHT as i32 {
+        if y >= self.height as i32 {
             return BlockType::Empty;
         }
 
-        if x < 0 || y < 0 || x >= WIDTH as i32 {
+        if x < 0 || y < 0 || x >= self.width as i32 {
             return BlockType::Outside;
         }
 
@@ -25,13 +24,13 @@ impl Board {
     }
 
     pub fn set_block(&mut self, y: i32, x: i32, block: BlockType) {
-        if y >= 0 && y < HEIGHT as i32 && x >= 0 && x < WIDTH as i32 {
+        if y >= 0 && y < self.height as i32 && x >= 0 && x < self.width as i32 {
             self.data[y as usize][x as usize] = block;
         }
     }
 
     pub fn is_line_full(& self, y: i32) -> bool {
-        for x in 0..WIDTH as i32 {
+        for x in 0..self.width as i32 {
             if self.get_block(y, x) == BlockType::Empty {
                 return false;
             }
@@ -42,14 +41,14 @@ impl Board {
 
     pub fn trim(&mut self) -> u32 {
         let mut trimmed_count = 0;
-        let mut trimmed_board = [[BlockType::Empty; WIDTH]; HEIGHT];
+        let mut trimmed_board = vec![vec![BlockType::Empty; self.width]; self.height];
         let mut top = 0;
 
-        for y in 0..HEIGHT {
+        for y in 0..self.height {
             if self.is_line_full(y as i32) {
                 trimmed_count += 1;
             } else {
-                trimmed_board[top] = self.data[y];
+                trimmed_board[top] = self.data[y].clone();
                 top += 1;
             }
         }

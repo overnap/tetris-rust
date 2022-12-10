@@ -1,16 +1,20 @@
 mod bag;
 mod board;
 mod block_type;
+mod config;
 mod piece;
 mod piece_type;
 mod input;
 mod input_type;
+mod level;
 mod tspin_type;
 
 use bag::*;
 use board::*;
+use level::*;
 use tspin_type::*;
 pub use block_type::*;
+pub use config::*;
 pub use piece::*;
 pub use piece_type::*;
 pub use input::*;
@@ -19,13 +23,10 @@ pub use input_type::*;
 pub struct Logic {
     pub bag: Bag,
     pub board: Board,
+    pub config: Config,
     pub current_piece: Option<Piece>,
     pub held_piece: Option<PieceType>,
     pub input: Input,
-
-    das: f32,
-    arr: f32,
-    sdf: f32,
 
     move_direction: i32,
     move_last: f32,
@@ -33,16 +34,14 @@ pub struct Logic {
 }
 
 impl Logic {
-    pub fn new() -> Self {
+    pub fn new(config: Config) -> Self {
         Self{
             bag: Bag::new(None),
-            board: Board::new(),
+            board: Board::new(config.board_height, config.board_width),
+            config,
             current_piece: None,
             held_piece: None,
             input: Input::new(),
-            das: 15.0 / 60.0,
-            arr: 2.0 / 60.0,
-            sdf: 2.0 / 60.0,
             move_direction: 0,
             move_last: 0.0,
             drop_last: 0.0
@@ -52,7 +51,7 @@ impl Logic {
     pub fn update(&mut self, dt: f32) {
         // Get the piece from the bag
         if let None = &self.current_piece {
-            self.current_piece = Some(Piece::new(self.bag.pop()));
+            self.current_piece = Some(Piece::new(self.bag.pop(), self.config.board_height, self.config.board_width));
         }
 
         // Hold
@@ -62,9 +61,9 @@ impl Logic {
                 self.held_piece = Some(piece.get_type());
                 
                 if let Some(held) = previous_held {
-                    self.current_piece = Some(Piece::new(held));
+                    self.current_piece = Some(Piece::new(held, self.config.board_height, self.config.board_width));
                 } else {
-                    self.current_piece = Some(Piece::new(self.bag.pop()));
+                    self.current_piece = Some(Piece::new(self.bag.pop(), self.config.board_height, self.config.board_width));
                 }
             }
         }
@@ -91,8 +90,8 @@ impl Logic {
             if self.move_direction != 0 {
                 self.move_last += dt;
 
-                while self.move_last >= self.das + self.arr {
-                    self.move_last -= self.arr;
+                while self.move_last >= self.config.das + self.config.arr {
+                    self.move_last -= self.config.arr;
                     piece.shift(&self.board, 0, self.move_direction);
                 }
             }
@@ -119,8 +118,8 @@ impl Logic {
             if self.input.is_held(InputType::SoftDrop) {
                 self.drop_last += dt;
 
-                while self.drop_last >= self.sdf {
-                    self.drop_last -= self.sdf;
+                while self.drop_last >= self.config.sdf {
+                    self.drop_last -= self.config.sdf;
                     piece.shift(&self.board, -1, 0);
                 }
             }
