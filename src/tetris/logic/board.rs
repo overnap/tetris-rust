@@ -29,4 +29,32 @@ impl Board {
             self.data[y as usize][x as usize] = block;
         }
     }
+
+    pub fn is_line_full(& self, y: i32) -> bool {
+        for x in 0..WIDTH as i32 {
+            if self.get_block(y, x) == BlockType::Empty {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    pub fn trim(&mut self) -> u32 {
+        let mut trimmed_count = 0;
+        let mut trimmed_board = [[BlockType::Empty; WIDTH]; HEIGHT];
+        let mut top = 0;
+
+        for y in 0..HEIGHT {
+            if self.is_line_full(y as i32) {
+                trimmed_count += 1;
+            } else {
+                trimmed_board[top] = self.data[y];
+                top += 1;
+            }
+        }
+
+        self.data = trimmed_board;
+        trimmed_count
+    }
 }

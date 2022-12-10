@@ -56,8 +56,8 @@ impl Logic {
         }
 
         // Hold
-        if let Some(piece) = &mut self.current_piece {
-            if self.input.is_pressed(InputType::Hold) {
+        if self.input.is_pressed(InputType::Hold) {
+            if let Some(piece) = &mut self.current_piece {
                 let previous_held = self.held_piece;
                 self.held_piece = Some(piece.get_type());
                 
@@ -129,6 +129,7 @@ impl Logic {
             if self.input.is_pressed(InputType::HardDrop) {
                 while piece.shift(&self.board, -1, 0) {};
                 piece.place(&mut self.board);
+                self.board.trim();
                 self.current_piece = None;
             }
         }
