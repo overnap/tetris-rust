@@ -47,9 +47,9 @@ impl Piece {
                 [BlockType::Empty, BlockType::Empty, BlockType::Empty, BlockType::Empty],
             ],
             PieceType::O => [
-                [BlockType::Empty, BlockType::Yellow, BlockType::Yellow, BlockType::Empty],
-                [BlockType::Empty, BlockType::Yellow, BlockType::Yellow, BlockType::Empty],
                 [BlockType::Empty, BlockType::Empty, BlockType::Empty, BlockType::Empty],
+                [BlockType::Empty, BlockType::Yellow, BlockType::Yellow, BlockType::Empty],
+                [BlockType::Empty, BlockType::Yellow, BlockType::Yellow, BlockType::Empty],
                 [BlockType::Empty, BlockType::Empty, BlockType::Empty, BlockType::Empty],
             ],
             PieceType::T => [

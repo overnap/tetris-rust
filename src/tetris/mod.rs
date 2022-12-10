@@ -145,7 +145,6 @@ impl Tetris {
         let piece = Piece::new(piece_type);
         let bias = (
             match piece_type {
-                PieceType::O => -BLOCK_PIXELS,
                 PieceType::I => BLOCK_PIXELS/2,
                 _ => 0
             },
